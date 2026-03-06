@@ -1,0 +1,21 @@
+[Unit]
+Description=Šihterica - Construction Time-Tracking App
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+WorkingDirectory=/opt/sihterica
+ExecStart=/usr/bin/node server/index.js
+Restart=on-failure
+RestartSec=10
+Environment=NODE_ENV=production
+Environment=PORT=3001
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=sihterica
+
+[Install]
+WantedBy=multi-user.target

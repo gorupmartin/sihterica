@@ -1,0 +1,273 @@
+import { useState, useEffect } from 'react';
+import api from '../api/client';
+
+export default function ReportsPage() {
+    const [tab, setTab] = useState('workers');
+    const now = new Date();
+    const [month, setMonth] = useState(now.getMonth() + 1);
+    const [year, setYear] = useState(now.getFullYear());
+
+    const tabs = [
+        { id: 'workers', label: 'Radnici' },
+        { id: 'locations', label: 'Gradilišta' },
+        { id: 'machines', label: 'Bageri' },
+        { id: 'trucks', label: 'Kamioni' },
+    ];
+
+    return (
+        <div className="space-y-6">
+            <div className="flex items-center justify-between">
+                <h1 className="text-2xl font-bold text-white">Izvještaji</h1>
+                <div className="flex items-center gap-3">
+                    <select value={month} onChange={e => setMonth(parseInt(e.target.value))}
+                        className="bg-surface-800 border border-surface-600 text-white rounded-lg px-3 py-2 text-sm">
+                        {[...Array(12)].map((_, i) => (
+                            <option key={i} value={i + 1}>
+                                {new Date(2024, i).toLocaleString('hr', { month: 'long' })}
+                            </option>
+                        ))}
+                    </select>
+                    <select value={year} onChange={e => setYear(parseInt(e.target.value))}
+                        className="bg-surface-800 border border-surface-600 text-white rounded-lg px-3 py-2 text-sm">
+                        {[2024, 2025, 2026, 2027].map(y => <option key={y} value={y}>{y}</option>)}
+                    </select>
+                </div>
+            </div>
+
+            <div className="flex gap-1 bg-surface-800/50 rounded-xl p-1">
+                {tabs.map(t => (
+                    <button key={t.id} onClick={() => setTab(t.id)}
+                        className={`flex-1 py-2 px-4 rounded-lg text-sm font-semibold transition-colors ${tab === t.id ? 'bg-blue-600 text-white' : 'text-surface-400 hover:text-white hover:bg-surface-700/50'}`}>
+                        {t.label}
+                    </button>
+                ))}
+            </div>
+
+            <p className="text-xs text-surface-500 italic">
+                ℹ️ Izvještaji prikazuju samo zaključane sate i neblokirane unose bagera/kamiona
+            </p>
+
+            {tab === 'workers' && <WorkersReport month={month} year={year} />}
+            {tab === 'locations' && <LocationsReport month={month} year={year} />}
+            {tab === 'machines' && <MachinesReport month={month} year={year} />}
+            {tab === 'trucks' && <TrucksReport month={month} year={year} />}
+        </div>
+    );
+}
+
+function WorkersReport({ month, year }) {
+    const [data, setData] = useState([]);
+    const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        setLoading(true);
+        api.getWorkerReport(month, year).then(setData).catch(console.error).finally(() => setLoading(false));
+    }, [month, year]);
+
+    if (loading) return <div className="text-center py-8 text-surface-400">Učitavanje...</div>;
+
+    return (
+        <div className="overflow-x-auto rounded-xl border border-surface-700/50">
+            <table className="w-full text-sm">
+                <thead>
+                    <tr className="bg-surface-800/80">
+                        <th className="px-4 py-3 text-left text-surface-300">Radnik</th>
+                        <th className="px-4 py-3 text-center text-surface-300">RAD (h)</th>
+                        <th className="px-4 py-3 text-center text-surface-300">RAD (dana)</th>
+                        <th className="px-4 py-3 text-center text-surface-300">GO (h)</th>
+                        <th className="px-4 py-3 text-center text-surface-300">BO (h)</th>
+                        <th className="px-4 py-3 text-center text-surface-300">SLO (dana)</th>
+                        <th className="px-4 py-3 text-center text-surface-300 font-bold">Ukupno (h)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {data.map((w, idx) => (
+                        <tr key={w.id} className={`border-t border-surface-700/30 ${idx % 2 === 0 ? 'bg-surface-900/30' : ''}`}>
+                            <td className={`px-4 py-3 font-medium ${w.active ? 'text-white' : 'text-red-400'}`}>
+                                {w.surname} {w.name}
+                            </td>
+                            <td className="px-4 py-3 text-center text-blue-300">{w.rad_hours}</td>
+                            <td className="px-4 py-3 text-center text-surface-400">{w.rad_days}</td>
+                            <td className="px-4 py-3 text-center text-yellow-300">{w.go_hours}</td>
+                            <td className="px-4 py-3 text-center text-red-300">{w.bo_hours}</td>
+                            <td className="px-4 py-3 text-center text-gray-400">{w.slo_days}</td>
+                            <td className="px-4 py-3 text-center text-white font-bold">{w.total_hours}</td>
+                        </tr>
+                    ))}
+                    {data.length === 0 && (
+                        <tr><td colSpan={7} className="px-4 py-8 text-center text-surface-500">Nema podataka</td></tr>
+                    )}
+                </tbody>
+            </table>
+        </div>
+    );
+}
+
+function LocationsReport({ month, year }) {
+    const [data, setData] = useState([]);
+    const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        setLoading(true);
+        api.getLocationReport(month, year).then(setData).catch(console.error).finally(() => setLoading(false));
+    }, [month, year]);
+
+    if (loading) return <div className="text-center py-8 text-surface-400">Učitavanje...</div>;
+
+    return (
+        <div className="overflow-x-auto rounded-xl border border-surface-700/50">
+            <table className="w-full text-sm">
+                <thead>
+                    <tr className="bg-surface-800/80">
+                        <th className="px-4 py-3 text-left text-surface-300">Gradilište</th>
+                        <th className="px-4 py-3 text-center text-surface-300">Ljudski sati</th>
+                        <th className="px-4 py-3 text-center text-surface-300">Broj radnika</th>
+                        <th className="px-4 py-3 text-center text-surface-300">Sati bagera</th>
+                        <th className="px-4 py-3 text-center text-surface-300">Broj bagera</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {data.map((l, idx) => (
+                        <tr key={l.id} className={`border-t border-surface-700/30 ${idx % 2 === 0 ? 'bg-surface-900/30' : ''}`}>
+                            <td className="px-4 py-3 text-white font-medium">{l.name}</td>
+                            <td className="px-4 py-3 text-center text-blue-300">{l.human_hours}</td>
+                            <td className="px-4 py-3 text-center text-surface-400">{l.worker_count}</td>
+                            <td className="px-4 py-3 text-center text-amber-300">{l.machine_hours}</td>
+                            <td className="px-4 py-3 text-center text-surface-400">{l.machine_count}</td>
+                        </tr>
+                    ))}
+                    {data.length === 0 && (
+                        <tr><td colSpan={5} className="px-4 py-8 text-center text-surface-500">Nema podataka</td></tr>
+                    )}
+                </tbody>
+            </table>
+        </div>
+    );
+}
+
+function MachinesReport({ month, year }) {
+    const [data, setData] = useState({ details: [], totals: [] });
+    const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        setLoading(true);
+        api.getMachineReport(month, year).then(setData).catch(console.error).finally(() => setLoading(false));
+    }, [month, year]);
+
+    if (loading) return <div className="text-center py-8 text-surface-400">Učitavanje...</div>;
+
+    return (
+        <div className="space-y-6">
+            {/* Totals */}
+            <div className="overflow-x-auto rounded-xl border border-surface-700/50">
+                <table className="w-full text-sm">
+                    <thead>
+                        <tr className="bg-surface-800/80">
+                            <th className="px-4 py-3 text-left text-surface-300">Bager</th>
+                            <th className="px-4 py-3 text-center text-surface-300">Ukupni sati</th>
+                            <th className="px-4 py-3 text-center text-surface-300">Unosa</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {data.totals.map((m, idx) => (
+                            <tr key={m.id} className={`border-t border-surface-700/30 ${idx % 2 === 0 ? 'bg-surface-900/30' : ''}`}>
+                                <td className="px-4 py-3 text-white font-medium">{m.name}</td>
+                                <td className="px-4 py-3 text-center text-amber-300 font-bold">{m.total_hours}h</td>
+                                <td className="px-4 py-3 text-center text-surface-400">{m.entry_count}</td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+
+            {/* Details */}
+            {data.details.length > 0 && (
+                <div className="overflow-x-auto rounded-xl border border-surface-700/50">
+                    <table className="w-full text-sm">
+                        <thead>
+                            <tr className="bg-surface-800/80">
+                                <th className="px-4 py-3 text-left text-surface-300">Bager</th>
+                                <th className="px-4 py-3 text-left text-surface-300">Gradilište</th>
+                                <th className="px-4 py-3 text-center text-surface-300">Sati</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {data.details.map((d, idx) => (
+                                <tr key={`${d.machine_id}-${d.location_id}`} className={`border-t border-surface-700/30 ${idx % 2 === 0 ? 'bg-surface-900/30' : ''}`}>
+                                    <td className="px-4 py-3 text-white">{d.machine_name}</td>
+                                    <td className="px-4 py-3 text-surface-300">{d.location_name}</td>
+                                    <td className="px-4 py-3 text-center text-amber-300">{d.total_hours}h</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            )}
+        </div>
+    );
+}
+
+function TrucksReport({ month, year }) {
+    const [data, setData] = useState({ details: [], totals: [] });
+    const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        setLoading(true);
+        api.getTruckReport(month, year).then(setData).catch(console.error).finally(() => setLoading(false));
+    }, [month, year]);
+
+    if (loading) return <div className="text-center py-8 text-surface-400">Učitavanje...</div>;
+
+    return (
+        <div className="space-y-6">
+            {/* Totals */}
+            <div className="overflow-x-auto rounded-xl border border-surface-700/50">
+                <table className="w-full text-sm">
+                    <thead>
+                        <tr className="bg-surface-800/80">
+                            <th className="px-4 py-3 text-left text-surface-300">Kamion</th>
+                            <th className="px-4 py-3 text-center text-surface-300">Ukupni km</th>
+                            <th className="px-4 py-3 text-center text-surface-300">Unosa</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {data.totals.map((t, idx) => (
+                            <tr key={t.id} className={`border-t border-surface-700/30 ${idx % 2 === 0 ? 'bg-surface-900/30' : ''}`}>
+                                <td className="px-4 py-3 text-white font-medium">{t.name}</td>
+                                <td className="px-4 py-3 text-center text-purple-300 font-bold">{t.total_km} km</td>
+                                <td className="px-4 py-3 text-center text-surface-400">{t.entry_count}</td>
+                            </tr>
+                        ))}
+                        {data.totals.length === 0 && (
+                            <tr><td colSpan={3} className="px-4 py-8 text-center text-surface-500">Nema podataka</td></tr>
+                        )}
+                    </tbody>
+                </table>
+            </div>
+
+            {/* Details */}
+            {data.details.length > 0 && (
+                <div className="overflow-x-auto rounded-xl border border-surface-700/50">
+                    <table className="w-full text-sm">
+                        <thead>
+                            <tr className="bg-surface-800/80">
+                                <th className="px-4 py-3 text-left text-surface-300">Kamion</th>
+                                <th className="px-4 py-3 text-left text-surface-300">Gradilište</th>
+                                <th className="px-4 py-3 text-center text-surface-300">Kilometri</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {data.details.map((d, idx) => (
+                                <tr key={`${d.truck_id}-${d.location_id}`} className={`border-t border-surface-700/30 ${idx % 2 === 0 ? 'bg-surface-900/30' : ''}`}>
+                                    <td className="px-4 py-3 text-white">{d.truck_name}</td>
+                                    <td className="px-4 py-3 text-surface-300">{d.location_name}</td>
+                                    <td className="px-4 py-3 text-center text-purple-300">{d.total_km} km</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            )}
+        </div>
+    );
+}

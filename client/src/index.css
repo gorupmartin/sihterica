@@ -1,0 +1,113 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Dark mode date inputs */
+input[type="date"] {
+  color-scheme: dark;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  cursor: pointer;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.1);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(100, 116, 139, 0.4);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 116, 139, 0.6);
+}
+
+/* Glassmorphism utility */
+@layer utilities {
+  .glass {
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .glass-light {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+  }
+}
+
+/* Smooth page transitions */
+.page-enter {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+.page-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+/* Matrix grid styles */
+.matrix-cell {
+  @apply text-xs font-medium text-center cursor-pointer transition-all duration-150;
+  min-width: 36px;
+}
+
+.matrix-cell:hover {
+  @apply ring-2 ring-primary-400 ring-offset-1;
+}
+
+.matrix-cell.rad {
+  @apply bg-emerald-500/20 text-emerald-300;
+}
+
+.matrix-cell.go {
+  @apply bg-amber-500/20 text-amber-300;
+}
+
+.matrix-cell.bo {
+  @apply bg-rose-500/20 text-rose-300;
+}
+
+/* Status badges */
+.status-badge {
+  @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold;
+}
+
+.status-badge.rad {
+  @apply bg-emerald-500/20 text-emerald-400 border border-emerald-500/30;
+}
+
+.status-badge.go {
+  @apply bg-amber-500/20 text-amber-400 border border-amber-500/30;
+}
+
+.status-badge.bo {
+  @apply bg-rose-500/20 text-rose-400 border border-rose-500/30;
+}
