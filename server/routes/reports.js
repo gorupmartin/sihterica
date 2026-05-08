@@ -38,6 +38,33 @@ router.get('/workers', authMiddleware, (req, res) => {
   res.json(results);
 });
 
+// GET /api/reports/workers/:id/locations — hours by location for a specific worker (locked days only)
+router.get('/workers/:id/locations', authMiddleware, (req, res) => {
+  const { month, year } = req.query;
+  const workerId = req.params.id;
+  if (!month || !year) {
+    return res.status(400).json({ error: 'Mjesec i godina su obavezni' });
+  }
+
+  const monthStr = String(month).padStart(2, '0');
+  const datePrefix = `${year}-${monthStr}%`;
+
+  const results = queryAll(`
+    SELECT 
+      l.id as location_id, l.name as location_name,
+      COALESCE(SUM(wl.hours), 0) as total_hours
+    FROM work_logs wl
+    INNER JOIN day_locks dl ON wl.worker_id = dl.worker_id AND wl.date = dl.date
+    LEFT JOIN locations l ON wl.location_id = l.id
+    WHERE wl.worker_id = ? AND wl.date LIKE ? AND wl.status = 'RAD'
+    GROUP BY wl.location_id
+    HAVING total_hours > 0
+    ORDER BY l.name
+  `, [workerId, datePrefix]);
+
+  res.json(results);
+});
+
 // GET /api/reports/locations — locked work hours + non-blocked machine hours
 router.get('/locations', authMiddleware, (req, res) => {
   const { month, year } = req.query;

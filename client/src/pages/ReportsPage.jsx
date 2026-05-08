@@ -58,11 +58,29 @@ export default function ReportsPage() {
 function WorkersReport({ month, year }) {
     const [data, setData] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [expandedWorker, setExpandedWorker] = useState(null);
+    const [locationData, setLocationData] = useState([]);
+    const [locationLoading, setLocationLoading] = useState(false);
 
     useEffect(() => {
         setLoading(true);
+        setExpandedWorker(null);
         api.getWorkerReport(month, year).then(setData).catch(console.error).finally(() => setLoading(false));
     }, [month, year]);
+
+    const handleWorkerClick = (worker) => {
+        if (expandedWorker === worker.id) {
+            setExpandedWorker(null);
+            return;
+        }
+        setExpandedWorker(worker.id);
+        setLocationLoading(true);
+        setLocationData([]);
+        api.getWorkerLocationBreakdown(worker.id, month, year)
+            .then(setLocationData)
+            .catch(console.error)
+            .finally(() => setLocationLoading(false));
+    };
 
     if (loading) return <div className="text-center py-8 text-surface-400">Učitavanje...</div>;
 
@@ -82,17 +100,57 @@ function WorkersReport({ month, year }) {
                 </thead>
                 <tbody>
                     {data.map((w, idx) => (
-                        <tr key={w.id} className={`border-t border-surface-700/30 ${idx % 2 === 0 ? 'bg-surface-900/30' : ''}`}>
-                            <td className={`px-4 py-3 font-medium ${w.active ? 'text-white' : 'text-red-400'}`}>
-                                {w.surname} {w.name}
-                            </td>
-                            <td className="px-4 py-3 text-center text-blue-300">{w.rad_hours}</td>
-                            <td className="px-4 py-3 text-center text-surface-400">{w.rad_days}</td>
-                            <td className="px-4 py-3 text-center text-yellow-300">{w.go_hours}</td>
-                            <td className="px-4 py-3 text-center text-red-300">{w.bo_hours}</td>
-                            <td className="px-4 py-3 text-center text-gray-400">{w.slo_days}</td>
-                            <td className="px-4 py-3 text-center text-white font-bold">{w.total_hours}</td>
-                        </tr>
+                        <>
+                            <tr key={w.id}
+                                onClick={() => handleWorkerClick(w)}
+                                className={`border-t border-surface-700/30 cursor-pointer transition-colors hover:bg-surface-700/40 ${idx % 2 === 0 ? 'bg-surface-900/30' : ''} ${expandedWorker === w.id ? 'bg-blue-900/20' : ''}`}>
+                                <td className={`px-4 py-3 font-medium ${w.active ? 'text-white' : 'text-red-400'}`}>
+                                    <span className="inline-flex items-center gap-2">
+                                        <span className={`text-xs transition-transform duration-200 ${expandedWorker === w.id ? 'rotate-90' : ''}`}>▶</span>
+                                        {w.surname} {w.name}
+                                    </span>
+                                </td>
+                                <td className="px-4 py-3 text-center text-blue-300">{w.rad_hours}</td>
+                                <td className="px-4 py-3 text-center text-surface-400">{w.rad_days}</td>
+                                <td className="px-4 py-3 text-center text-yellow-300">{w.go_hours}</td>
+                                <td className="px-4 py-3 text-center text-red-300">{w.bo_hours}</td>
+                                <td className="px-4 py-3 text-center text-gray-400">{w.slo_days}</td>
+                                <td className="px-4 py-3 text-center text-white font-bold">{w.total_hours}</td>
+                            </tr>
+                            {expandedWorker === w.id && (
+                                <tr key={`${w.id}-detail`}>
+                                    <td colSpan={7} className="px-0 py-0">
+                                        <div className="mx-4 my-3 rounded-lg bg-surface-800/60 border border-surface-600/50 overflow-hidden">
+                                            <div className="px-4 py-2.5 bg-surface-700/40 border-b border-surface-600/30">
+                                                <span className="text-sm font-semibold text-blue-300">
+                                                    📍 Sati po gradilištu — {w.surname} {w.name}
+                                                </span>
+                                            </div>
+                                            {locationLoading ? (
+                                                <div className="px-4 py-4 text-center text-surface-400 text-sm">Učitavanje...</div>
+                                            ) : locationData.length === 0 ? (
+                                                <div className="px-4 py-4 text-center text-surface-500 text-sm">Nema radnih sati na gradilištima</div>
+                                            ) : (
+                                                <div className="divide-y divide-surface-700/30">
+                                                    {locationData.map((loc) => (
+                                                        <div key={loc.location_id} className="flex items-center justify-between px-4 py-2.5 hover:bg-surface-700/20 transition-colors">
+                                                            <span className="text-surface-200 text-sm">{loc.location_name || 'Nepoznato gradilište'}</span>
+                                                            <span className="text-blue-300 font-semibold text-sm">{loc.total_hours}h</span>
+                                                        </div>
+                                                    ))}
+                                                    <div className="flex items-center justify-between px-4 py-2.5 bg-surface-700/30">
+                                                        <span className="text-white font-semibold text-sm">Ukupno RAD</span>
+                                                        <span className="text-white font-bold text-sm">
+                                                            {locationData.reduce((sum, loc) => sum + loc.total_hours, 0)}h
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </td>
+                                </tr>
+                            )}
+                        </>
                     ))}
                     {data.length === 0 && (
                         <tr><td colSpan={7} className="px-4 py-8 text-center text-surface-500">Nema podataka</td></tr>

@@ -118,6 +118,8 @@ const api = {
     // Reports
     getWorkerReport: (month, year) =>
         request(`${API_BASE}/reports/workers?month=${month}&year=${year}`),
+    getWorkerLocationBreakdown: (workerId, month, year) =>
+        request(`${API_BASE}/reports/workers/${workerId}/locations?month=${month}&year=${year}`),
     getLocationReport: (month, year) =>
         request(`${API_BASE}/reports/locations?month=${month}&year=${year}`),
     getMachineReport: (month, year) =>
