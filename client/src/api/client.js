@@ -126,6 +126,8 @@ const api = {
         request(`${API_BASE}/reports/machines?month=${month}&year=${year}`),
     getTruckReport: (month, year) =>
         request(`${API_BASE}/reports/trucks?month=${month}&year=${year}`),
+    getFinancialReport: (month, year) =>
+        request(`${API_BASE}/reports/financial?month=${month}&year=${year}`),
 
     // Users (admin)
     getUsers: () => request(`${API_BASE}/users`),

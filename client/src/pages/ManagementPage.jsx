@@ -37,8 +37,10 @@ function WorkersTab() {
     const [items, setItems] = useState([]);
     const [name, setName] = useState('');
     const [surname, setSurname] = useState('');
+    const [rate, setRate] = useState('');
     const [showAdd, setShowAdd] = useState(false);
     const [message, setMessage] = useState('');
+    const [rateEdits, setRateEdits] = useState({});
 
     useEffect(() => { load(); }, []);
 
@@ -49,8 +51,8 @@ function WorkersTab() {
     const handleAdd = async () => {
         if (!name.trim() || !surname.trim()) return;
         try {
-            await api.addWorker({ name: name.trim(), surname: surname.trim() });
-            setName(''); setSurname(''); setShowAdd(false);
+            await api.addWorker({ name: name.trim(), surname: surname.trim(), hourly_rate: parseFloat(rate) || 0 });
+            setName(''); setSurname(''); setRate(''); setShowAdd(false);
             setMessage('✅ Radnik dodan');
             load();
         } catch (err) { setMessage(`❌ ${err.message}`); }
@@ -59,6 +61,18 @@ function WorkersTab() {
     const toggleActive = async (item) => {
         try {
             await api.updateWorker(item.id, { active: !item.active });
+            load();
+        } catch (err) { setMessage(`❌ ${err.message}`); }
+    };
+
+    const saveRate = async (item) => {
+        const raw = rateEdits[item.id];
+        if (raw === undefined) return;
+        const value = parseFloat(raw) || 0;
+        if (value === item.hourly_rate) return;
+        try {
+            await api.updateWorker(item.id, { hourly_rate: value });
+            setMessage('✅ Satnica spremljena');
             load();
         } catch (err) { setMessage(`❌ ${err.message}`); }
     };
@@ -83,6 +97,9 @@ function WorkersTab() {
                     <input type="text" value={surname} onChange={e => setSurname(e.target.value)}
                         className="w-full bg-surface-900 border border-surface-600 text-white rounded-lg px-3 py-2 text-sm"
                         placeholder="Prezime" />
+                    <input type="number" step="0.01" min="0" value={rate} onChange={e => setRate(e.target.value)}
+                        className="w-full bg-surface-900 border border-surface-600 text-white rounded-lg px-3 py-2 text-sm"
+                        placeholder="Satnica (€/h)" />
                     <button onClick={handleAdd}
                         className="bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg px-4 py-2 text-sm font-semibold">
                         Spremi
@@ -96,6 +113,7 @@ function WorkersTab() {
                         <tr className="bg-surface-800/80">
                             <th className="px-4 py-3 text-left text-surface-300">Ime</th>
                             <th className="px-4 py-3 text-left text-surface-300">Prezime</th>
+                            <th className="px-4 py-3 text-center text-surface-300">Satnica (€/h)</th>
                             <th className="px-4 py-3 text-center text-surface-300">Status</th>
                             <th className="px-4 py-3 text-center text-surface-300">Akcije</th>
                         </tr>
@@ -105,6 +123,13 @@ function WorkersTab() {
                             <tr key={item.id} className={`border-t border-surface-700/30 ${idx % 2 === 0 ? 'bg-surface-900/30' : ''}`}>
                                 <td className="px-4 py-3 text-white">{item.name}</td>
                                 <td className="px-4 py-3 text-white">{item.surname}</td>
+                                <td className="px-4 py-3 text-center">
+                                    <input type="number" step="0.01" min="0"
+                                        value={rateEdits[item.id] !== undefined ? rateEdits[item.id] : (item.hourly_rate ?? 0)}
+                                        onChange={e => setRateEdits({ ...rateEdits, [item.id]: e.target.value })}
+                                        onBlur={() => saveRate(item)}
+                                        className="w-24 bg-surface-900 border border-surface-600 text-white rounded-lg px-2 py-1 text-sm text-center" />
+                                </td>
                                 <td className="px-4 py-3 text-center">
                                     <span className={`px-2 py-0.5 rounded text-xs font-bold ${item.active ? 'bg-emerald-500/20 text-emerald-300' : 'bg-red-500/20 text-red-300'}`}>
                                         {item.active ? 'Aktivan' : 'Blokiran'}

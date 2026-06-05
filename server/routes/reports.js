@@ -194,4 +194,71 @@ router.get('/trucks', authMiddleware, (req, res) => {
   res.json({ details: results, totals: truckTotals });
 });
 
+// GET /api/reports/financial — payout breakdown per worker (locked days only)
+// Gablec: 6.5€ for each day with >= 5 RAD hours (summed across locations)
+// Hours pay: hourly_rate * (RAD hours + GO hours)
+router.get('/financial', authMiddleware, (req, res) => {
+  const { month, year } = req.query;
+  if (!month || !year) {
+    return res.status(400).json({ error: 'Mjesec i godina su obavezni' });
+  }
+
+  const GABLEC_RATE = 6.5;
+  const GABLEC_MIN_HOURS = 5;
+
+  const monthStr = String(month).padStart(2, '0');
+  const datePrefix = `${year}-${monthStr}%`;
+
+  // Worked + vacation hours per worker, locked days only
+  const workers = queryAll(`
+    SELECT
+      w.id, w.name, w.surname, w.active,
+      COALESCE(w.hourly_rate, 0) as hourly_rate,
+      COALESCE(SUM(CASE WHEN wl.status = 'RAD' THEN wl.hours ELSE 0 END), 0) as rad_hours,
+      COALESCE(SUM(CASE WHEN wl.status = 'GO' THEN wl.hours ELSE 0 END), 0) as go_hours
+    FROM workers w
+    LEFT JOIN work_logs wl ON w.id = wl.worker_id AND wl.date LIKE ?
+    LEFT JOIN day_locks dl ON wl.worker_id = dl.worker_id AND wl.date = dl.date
+    WHERE (w.active = 1 OR wl.id IS NOT NULL) AND (wl.id IS NULL OR dl.id IS NOT NULL)
+    GROUP BY w.id
+    ORDER BY w.surname, w.name
+  `, [datePrefix]);
+
+  // Gablec days: per worker, count days where summed RAD hours >= 5 (locked days only)
+  const gablec = queryAll(`
+    SELECT worker_id, COUNT(*) as gablec_days FROM (
+      SELECT wl.worker_id, wl.date, SUM(wl.hours) as day_rad
+      FROM work_logs wl
+      INNER JOIN day_locks dl ON wl.worker_id = dl.worker_id AND wl.date = dl.date
+      WHERE wl.date LIKE ? AND wl.status = 'RAD'
+      GROUP BY wl.worker_id, wl.date
+      HAVING day_rad >= ?
+    )
+    GROUP BY worker_id
+  `, [datePrefix, GABLEC_MIN_HOURS]);
+
+  const gablecMap = {};
+  for (const g of gablec) gablecMap[g.worker_id] = g.gablec_days;
+
+  const round2 = (n) => Math.round(n * 100) / 100;
+
+  const results = workers.map(w => {
+    const gablecDays = gablecMap[w.id] || 0;
+    const gablecTotal = round2(gablecDays * GABLEC_RATE);
+    const paidHours = round2(w.rad_hours + w.go_hours);
+    const hoursPay = round2(w.hourly_rate * paidHours);
+    const totalPayout = round2(hoursPay + gablecTotal);
+    return {
+      ...w,
+      paid_hours: paidHours,
+      gablec_days: gablecDays,
+      gablec_total: gablecTotal,
+      hours_pay: hoursPay,
+      total_payout: totalPayout
+    };
+  });
+
+  res.json({ gablec_rate: GABLEC_RATE, gablec_min_hours: GABLEC_MIN_HOURS, workers: results });
+});
+
 module.exports = router;
