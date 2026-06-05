@@ -42,10 +42,18 @@ async function initDatabase() {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
       surname TEXT NOT NULL,
+      hourly_rate REAL DEFAULT 0,
       active INTEGER DEFAULT 1,
       created_at TEXT DEFAULT (datetime('now'))
     )
   `);
+
+  // Migration: add hourly_rate column if missing (existing DBs)
+  try {
+    db.run('SELECT hourly_rate FROM workers LIMIT 1');
+  } catch {
+    try { db.run('ALTER TABLE workers ADD COLUMN hourly_rate REAL DEFAULT 0'); } catch { }
+  }
 
   // --- Locations ---
   db.run(`

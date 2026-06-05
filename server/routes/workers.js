@@ -38,13 +38,15 @@ router.get('/', authMiddleware, (req, res) => {
 
 // POST /api/workers
 router.post('/', authMiddleware, requireRole('racunovodstvo', 'admin'), (req, res) => {
-    const { name, surname } = req.body;
+    const { name, surname, hourly_rate } = req.body;
     if (!name || !surname) {
         return res.status(400).json({ error: 'Ime i prezime su obavezni' });
     }
 
+    const rate = hourly_rate !== undefined ? parseFloat(hourly_rate) || 0 : 0;
+
     try {
-        const result = runSql('INSERT INTO workers (name, surname) VALUES (?, ?)', [name, surname]);
+        const result = runSql('INSERT INTO workers (name, surname, hourly_rate) VALUES (?, ?, ?)', [name, surname, rate]);
         const worker = queryOne('SELECT * FROM workers WHERE id = ?', [result.lastInsertRowid]);
         res.status(201).json(worker);
     } catch (err) {
@@ -55,7 +57,7 @@ router.post('/', authMiddleware, requireRole('racunovodstvo', 'admin'), (req, re
 // PATCH /api/workers/:id
 router.patch('/:id', authMiddleware, requireRole('racunovodstvo', 'admin'), (req, res) => {
     const { id } = req.params;
-    const { name, surname, active } = req.body;
+    const { name, surname, active, hourly_rate } = req.body;
 
     const worker = queryOne('SELECT * FROM workers WHERE id = ?', [parseInt(id)]);
     if (!worker) {
@@ -65,9 +67,10 @@ router.patch('/:id', authMiddleware, requireRole('racunovodstvo', 'admin'), (req
     const updatedName = name !== undefined ? name : worker.name;
     const updatedSurname = surname !== undefined ? surname : worker.surname;
     const updatedActive = active !== undefined ? (active ? 1 : 0) : worker.active;
+    const updatedRate = hourly_rate !== undefined ? (parseFloat(hourly_rate) || 0) : worker.hourly_rate;
 
-    runSql('UPDATE workers SET name = ?, surname = ?, active = ? WHERE id = ?',
-        [updatedName, updatedSurname, updatedActive, parseInt(id)]);
+    runSql('UPDATE workers SET name = ?, surname = ?, active = ?, hourly_rate = ? WHERE id = ?',
+        [updatedName, updatedSurname, updatedActive, updatedRate, parseInt(id)]);
 
     const updated = queryOne('SELECT * FROM workers WHERE id = ?', [parseInt(id)]);
     res.json(updated);

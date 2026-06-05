@@ -14,7 +14,7 @@ router.get('/', authMiddleware, (req, res) => {
 });
 
 // POST /api/locations
-router.post('/', authMiddleware, (req, res) => {
+router.post('/', authMiddleware, requireRole('racunovodstvo', 'admin'), (req, res) => {
     const { name } = req.body;
     if (!name) {
         return res.status(400).json({ error: 'Naziv gradilišta je obavezan' });
@@ -34,7 +34,7 @@ router.post('/', authMiddleware, (req, res) => {
 });
 
 // PATCH /api/locations/:id
-router.patch('/:id', authMiddleware, requireRole('racunovodstvo'), (req, res) => {
+router.patch('/:id', authMiddleware, requireRole('racunovodstvo', 'admin'), (req, res) => {
     const { id } = req.params;
     const { name, active } = req.body;
 

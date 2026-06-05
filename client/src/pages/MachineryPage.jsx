@@ -1,14 +1,13 @@
 import { useState, useEffect } from 'react';
 import api from '../api/client';
 import { useAuth } from '../context/AuthContext';
+import { usePeriod } from '../context/PeriodContext';
 import DatePicker from '../components/DatePicker';
 
 export default function MachineryPage() {
     const { isRacunovodstvo, isAdmin } = useAuth();
     const canBlock = isRacunovodstvo || isAdmin;
-    const now = new Date();
-    const [month, setMonth] = useState(now.getMonth() + 1);
-    const [year, setYear] = useState(now.getFullYear());
+    const { month, setMonth, year, setYear } = usePeriod();
     const [machines, setMachines] = useState([]);
     const [locations, setLocations] = useState([]);
     const [logs, setLogs] = useState([]);

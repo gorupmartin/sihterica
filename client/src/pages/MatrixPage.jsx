@@ -1,13 +1,12 @@
 import { useState, useEffect } from 'react';
 import api from '../api/client';
 import { useAuth } from '../context/AuthContext';
+import { usePeriod } from '../context/PeriodContext';
 
 export default function MatrixPage() {
     const { isRacunovodstvo, isAdmin } = useAuth();
     const canUnlock = isRacunovodstvo || isAdmin;
-    const now = new Date();
-    const [month, setMonth] = useState(now.getMonth() + 1);
-    const [year, setYear] = useState(now.getFullYear());
+    const { month, setMonth, year, setYear } = usePeriod();
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(false);
     const [locations, setLocations] = useState([]);

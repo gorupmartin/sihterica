@@ -14,7 +14,7 @@ router.get('/', authMiddleware, (req, res) => {
 });
 
 // POST /api/machines
-router.post('/', authMiddleware, requireRole('racunovodstvo'), (req, res) => {
+router.post('/', authMiddleware, requireRole('racunovodstvo', 'admin'), (req, res) => {
     const { name } = req.body;
     if (!name) {
         return res.status(400).json({ error: 'Naziv stroja je obavezan' });
@@ -30,7 +30,7 @@ router.post('/', authMiddleware, requireRole('racunovodstvo'), (req, res) => {
 });
 
 // PATCH /api/machines/:id
-router.patch('/:id', authMiddleware, requireRole('racunovodstvo'), (req, res) => {
+router.patch('/:id', authMiddleware, requireRole('racunovodstvo', 'admin'), (req, res) => {
     const { id } = req.params;
     const { name, active } = req.body;
 
