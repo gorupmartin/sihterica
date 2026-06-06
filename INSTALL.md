@@ -53,6 +53,18 @@ Ovo stvara:
 - 4 testna gradilišta
 - 4 testna stroja
 
+## 3.1 Sigurnosni ključ (JWT_SECRET)
+
+Aplikacija potpisuje prijave tajnim ključem. **Obavezno postavi vlastiti** (inače se koristi javno poznati zadani ključ iz koda).
+
+```bash
+# Generiraj nasumičan ključ i spremi ga u zaštićeni file (NIJE u gitu)
+echo "JWT_SECRET=$(openssl rand -hex 32)" | sudo tee /etc/sihterica.env
+sudo chmod 600 /etc/sihterica.env
+```
+
+Servis (sljedeći korak) automatski učita ovaj file. Nakon promjene ključa svi se korisnici moraju ponovno prijaviti.
+
 ## 4. Postavi systemd servis
 
 ```bash

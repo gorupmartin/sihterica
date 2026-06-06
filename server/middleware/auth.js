@@ -1,6 +1,8 @@
 const jwt = require('jsonwebtoken');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'sihterica_secret_key_2024_promijeni_me';
+const DEFAULT_SECRET = 'sihterica_secret_key_2024_promijeni_me';
+const JWT_SECRET = process.env.JWT_SECRET || DEFAULT_SECRET;
+const usingDefaultSecret = !process.env.JWT_SECRET;
 
 function authMiddleware(req, res, next) {
     const authHeader = req.headers.authorization;
@@ -28,4 +30,4 @@ function requireRole(...roles) {
     };
 }
 
-module.exports = { authMiddleware, requireRole, JWT_SECRET };
+module.exports = { authMiddleware, requireRole, JWT_SECRET, usingDefaultSecret };

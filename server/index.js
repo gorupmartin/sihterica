@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const { initDatabase } = require('./database');
+const { usingDefaultSecret } = require('./middleware/auth');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -21,6 +22,7 @@ const truckRoutes = require('./routes/trucks');
 const truckLogRoutes = require('./routes/truck-logs');
 const reportRoutes = require('./routes/reports');
 const userRoutes = require('./routes/users');
+const settingsRoutes = require('./routes/settings');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/workers', workerRoutes);
@@ -33,6 +35,7 @@ app.use('/api/trucks', truckRoutes);
 app.use('/api/truck-logs', truckLogRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/settings', settingsRoutes);
 
 // Serve static frontend in production
 app.use(express.static(path.join(__dirname, '..', 'client', 'dist')));
@@ -42,6 +45,13 @@ app.get('*', (req, res) => {
 
 async function start() {
     await initDatabase();
+    if (usingDefaultSecret) {
+        console.warn('');
+        console.warn('⚠️  UPOZORENJE: Koristi se zadani (nesigurni) JWT ključ!');
+        console.warn('⚠️  Postavi vlastiti tajni ključ kroz env varijablu JWT_SECRET.');
+        console.warn('⚠️  Vidi INSTALL.md → "Sigurnosni ključ (JWT_SECRET)".');
+        console.warn('');
+    }
     app.listen(PORT, () => {
         console.log(`🏗️  Šihterica server pokrenut na portu ${PORT}`);
     });

@@ -129,6 +129,11 @@ const api = {
     getFinancialReport: (month, year) =>
         request(`${API_BASE}/reports/financial?month=${month}&year=${year}`),
 
+    // Settings
+    getSettings: () => request(`${API_BASE}/settings`),
+    updateSettings: (data) =>
+        request(`${API_BASE}/settings`, { method: 'PATCH', body: JSON.stringify(data) }),
+
     // Users (admin)
     getUsers: () => request(`${API_BASE}/users`),
     createUser: (data) =>

@@ -1,5 +1,5 @@
 const express = require('express');
-const { queryAll } = require('../database');
+const { queryAll, queryOne } = require('../database');
 const { authMiddleware } = require('../middleware/auth');
 
 const router = express.Router();
@@ -203,8 +203,11 @@ router.get('/financial', authMiddleware, (req, res) => {
     return res.status(400).json({ error: 'Mjesec i godina su obavezni' });
   }
 
-  const GABLEC_RATE = 6.5;
-  const GABLEC_MIN_HOURS = 5;
+  // Read configurable values from settings (fallback to defaults)
+  const rateRow = queryOne(`SELECT value FROM settings WHERE key = 'gablec_rate'`);
+  const minRow = queryOne(`SELECT value FROM settings WHERE key = 'gablec_min_hours'`);
+  const GABLEC_RATE = rateRow ? parseFloat(rateRow.value) : 6.5;
+  const GABLEC_MIN_HOURS = minRow ? parseFloat(minRow.value) : 5;
 
   const monthStr = String(month).padStart(2, '0');
   const datePrefix = `${year}-${monthStr}%`;

@@ -41,11 +41,31 @@ function WorkersTab() {
     const [showAdd, setShowAdd] = useState(false);
     const [message, setMessage] = useState('');
     const [rateEdits, setRateEdits] = useState({});
+    const [gablecRate, setGablecRate] = useState('');
+    const [gablecMin, setGablecMin] = useState('');
 
-    useEffect(() => { load(); }, []);
+    useEffect(() => { load(); loadSettings(); }, []);
 
     const load = async () => {
         try { setItems(await api.getWorkers({ all: 'true' })); } catch { }
+    };
+
+    const loadSettings = async () => {
+        try {
+            const s = await api.getSettings();
+            setGablecRate(String(s.gablec_rate ?? 6.5));
+            setGablecMin(String(s.gablec_min_hours ?? 5));
+        } catch { }
+    };
+
+    const saveSettings = async () => {
+        try {
+            await api.updateSettings({
+                gablec_rate: parseFloat(gablecRate) || 0,
+                gablec_min_hours: parseFloat(gablecMin) || 0,
+            });
+            setMessage('✅ Postavke gableca spremljene');
+        } catch (err) { setMessage(`❌ ${err.message}`); }
     };
 
     const handleAdd = async () => {
@@ -79,6 +99,32 @@ function WorkersTab() {
 
     return (
         <div className="space-y-4">
+            {/* Gablec postavke */}
+            <div className="bg-surface-800/50 border border-surface-600 rounded-xl p-4 space-y-3">
+                <h2 className="text-lg font-semibold text-white">💶 Postavke gableca</h2>
+                <p className="text-xs text-surface-500">
+                    Radnik dobiva gablec za svaki dan kad odradi (RAD) barem ovoliko sati. Vrijedi za buduće izračune u izvještaju Financije.
+                </p>
+                <div className="flex flex-wrap items-end gap-4">
+                    <div className="space-y-1">
+                        <label className="block text-xs text-surface-400">Iznos gableca (€ po danu)</label>
+                        <input type="number" step="0.01" min="0" value={gablecRate}
+                            onChange={e => setGablecRate(e.target.value)}
+                            className="w-40 bg-surface-900 border border-surface-600 text-white rounded-lg px-3 py-2 text-sm" />
+                    </div>
+                    <div className="space-y-1">
+                        <label className="block text-xs text-surface-400">Najmanje sati za gablec</label>
+                        <input type="number" step="0.5" min="0" value={gablecMin}
+                            onChange={e => setGablecMin(e.target.value)}
+                            className="w-40 bg-surface-900 border border-surface-600 text-white rounded-lg px-3 py-2 text-sm" />
+                    </div>
+                    <button onClick={saveSettings}
+                        className="bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg px-4 py-2 text-sm font-semibold">
+                        Spremi postavke
+                    </button>
+                </div>
+            </div>
+
             <div className="flex items-center justify-between">
                 <h2 className="text-lg font-semibold text-white">Radnici ({items.length})</h2>
                 <button onClick={() => setShowAdd(!showAdd)}

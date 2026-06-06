@@ -11,6 +11,8 @@ Restart=on-failure
 RestartSec=10
 Environment=NODE_ENV=production
 Environment=PORT=3001
+# Tajni ključ (JWT_SECRET) se čita iz ovog filea (nije u gitu)
+EnvironmentFile=-/etc/sihterica.env
 
 # Logging
 StandardOutput=journal

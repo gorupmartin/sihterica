@@ -100,6 +100,26 @@ async function initDatabase() {
     )
   `);
 
+  // --- Settings (key/value) ---
+  db.run(`
+    CREATE TABLE IF NOT EXISTS settings (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL
+    )
+  `);
+
+  // Seed default settings if missing
+  const settingDefaults = {
+    gablec_rate: '6.5',
+    gablec_min_hours: '5'
+  };
+  for (const [key, value] of Object.entries(settingDefaults)) {
+    const exists = queryOne('SELECT key FROM settings WHERE key = ?', [key]);
+    if (!exists) {
+      db.run('INSERT INTO settings (key, value) VALUES (?, ?)', [key, value]);
+    }
+  }
+
   // --- Machines ---
   db.run(`
     CREATE TABLE IF NOT EXISTS machines (
